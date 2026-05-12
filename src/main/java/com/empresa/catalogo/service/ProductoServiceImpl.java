@@ -6,12 +6,17 @@ import com.empresa.catalogo.entity.Producto;
 import com.empresa.catalogo.exception.RecursoNoEncontradoException;
 import com.empresa.catalogo.factory.ProductoFactory;
 import com.empresa.catalogo.repository.ProductoRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
 @Service
 public class ProductoServiceImpl implements ProductoService {
+
+    private static final Logger log =
+            LoggerFactory.getLogger(ProductoServiceImpl.class);
 
     private final ProductoRepository repo;
     private final ProductoFactory factory;
@@ -23,27 +28,40 @@ public class ProductoServiceImpl implements ProductoService {
 
     @Override
     public ProductoResponseDTO crear(ProductoRequestDTO dto) {
+        log.info("Creando producto: nombre={}, categoria={}",
+                dto.getNombre(), dto.getCategoria());
         Producto p = factory.toEntity(dto);
-        return factory.toResponseDTO(repo.save(p));
+        ProductoResponseDTO resp = factory.toResponseDTO(repo.save(p));
+        log.info("Producto creado exitosamente con id={}", resp.getId());
+        return resp;
     }
 
     @Override
     public ProductoResponseDTO buscarPorId(Long id) {
-        Producto p = repo.findById(id)
-                .orElseThrow(() -> new RecursoNoEncontradoException("Producto", id));
+        log.debug("Buscando producto con id={}", id);
+        Producto p = repo.findById(id).orElseThrow(() -> {
+            log.warn("Producto con id={} no encontrado", id);
+            return new RecursoNoEncontradoException("Producto", id);
+        });
+        log.info("Producto con id={} encontrado correctamente", id);
         return factory.toResponseDTO(p);
     }
 
     @Override
     public List<ProductoResponseDTO> listarActivos() {
-        return repo.findByActivoTrue().stream()
+        log.info("Listando todos los productos activos");
+        List<ProductoResponseDTO> productos = repo.findByActivoTrue().stream()
                 .map(factory::toResponseDTO)
                 .toList();
+        log.info("Total de productos activos encontrados: {}", productos.size());
+        return productos;
     }
 
     @Override
     public void eliminar(Long id) {
+        log.info("Eliminando producto con id={}", id);
         buscarPorId(id);
         repo.deleteById(id);
+        log.info("Producto con id={} eliminado correctamente", id);
     }
 }
