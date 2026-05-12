@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.stream.Collectors;
 
-@RestControllerAdvice
+@RestControllerAdvice(basePackages = "com.empresa.catalogo.controller")
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(RecursoNoEncontradoException.class)
